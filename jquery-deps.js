@@ -6,8 +6,8 @@
 	_loaded  = {}; // loaded files
 	_modules = {};
 	
-	var Dependency = function(files, callback) {
-		this.files = (new Module(files)).flatten();
+	var Dependency = function(resources, callback) {
+		this.files = (new Module(resources)).flatten();
 		this.callback = callback;
 		
 		/**
@@ -24,15 +24,15 @@
 		}
 	};
 	
-	var Module = function(files) {
-		this.files = files;
+	var Module = function(resources) {
+		this.resources = resources;
 		this.flatten = function() {
 			var out = [];
-			$.each(this.files, function(k, file) {
-				if (typeof _modules[file] === 'object' ) {
-					$.merge(out, _modules[file].flatten());
+			$.each(this.resources, function(k, resource) {
+				if (typeof _modules[resource] === 'object' ) {
+					$.merge(out, _modules[resource].flatten());
 				} else {
-					out.push(file);
+					out.push(resource);
 				}
 			});
 			return out;
@@ -65,17 +65,17 @@
 	};
 	
 	$.module = function() {
-		var name  = arguments[0];
-		var files = $.makeArray(arguments).slice(1);
+		var name      = arguments[0];
+		var resources = $.makeArray(arguments).slice(1);
 
-		_modules[name] = new Module(files);
+		_modules[name] = new Module(resources);
 	};
 	
 	$.require = function() {
-		var files    = $.makeArray(arguments).slice(0, -1);
-		var callback = arguments[arguments.length - 1];
+		var resources = $.makeArray(arguments).slice(0, -1);
+		var callback  = arguments[arguments.length - 1];
 
-		var dependency = new Dependency(files, callback);
+		var dependency = new Dependency(resources, callback);
 
 		$.each(dependency.files, function(k, file) {
 			
