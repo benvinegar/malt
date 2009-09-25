@@ -2,21 +2,71 @@
 	"http://www.w3.org/TR/html4/strict.dtd">
 <html>
 	<head>
+		<link rel="stylesheet" href="qunit/testsuite.css" type="text/css" media="screen" />
+
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js" type="text/javascript"></script>
+		<script src="qunit/testrunner.js" type="text/javascript"></script>
 		<script src="jquery-deps.js" type="text/javascript"></script>
 	</head>
 	<body>
 
-		<script>
-			$.module('package1', 'lib/a.js', 'lib/b.js');
-			
-			$.require('package1', function() {
-				alert(a);
+		 <h1>jQuery Dependency Manager</h1>
+		 <h2 id="banner"></h2>
+		 <h2 id="userAgent"></h2>
+		 <ol id="tests"></ol>
+		 <div id="main"></div>
+
+		<script type="text/javascript">
+			function setup() {
+				delete a;
+				delete b;
+				delete c;
+				$.require.reset();
+			}
+
+			test("require one file", function() {
+				setup();
+				stop();
+				$.require('inc/a.js', function() {
+					start();
+					equals(a, 'a');
+				});
 			});
 
-			$.require('lib/b.js', 'lib/c.js', function() {
-				alert(c);
+			test("require two files", function() {
+				setup();
+				stop();
+				$.require('inc/a.js', 'inc/b.js', function() {
+					start();
+					equals(a, 'a');
+					equals(b, 'b');
+				});
 			});
+
+			test("require a module containing one file", function() {
+				setup();
+				stop();
+				$.module('package', 'inc/a.js');
+				$.require('package', function() {
+					start();
+					equals(a, 'a');
+				});
+			});
+
+			test("require a module containing one file", function() {
+				setup();
+				stop();
+				$.module('package', 'inc/a.js', 'inc/b.js');
+				$.require('package', function() {
+					equals(a, 'a');
+					equals(b, 'b');
+					start();
+				});
+			});
+			
+			// test("require a module containing a module with one file", function() {
+			// 	setup();
+			// });
 		</script>
 	</body>
 </html>

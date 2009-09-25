@@ -95,4 +95,11 @@
 			});
 		});
 	};
+	
+
+	$.require.reset = function() {
+		_deps    = {}; // file -> dependency map
+		_loaded  = {}; // loaded files
+		_modules = {};
+	};
 })(jQuery);
