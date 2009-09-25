@@ -21,6 +21,8 @@
 				delete a;
 				delete b;
 				delete c;
+				$('link[href=inc/style.css]').remove();
+				$('img[href=inc/image.png]').remove();
 				$.require.reset();
 			}
 
@@ -65,6 +67,38 @@
 					equals($('link[href=inc/style.css]').length, 1);
 				});
 			});
+
+			test("request one image file", function() {
+				setup();
+				stop();
+				$.require('inc/image.png', function() {
+					start();
+					// There's nothing we can do here besides make sure the
+					// callback fired, because the pre-loading mechanism doesn't
+					// actually append any <img> tags to the document.
+					ok("callback fired");
+				});
+			});
+			
+			test("require one js file and one css file", function() {
+				setup();
+				stop();
+				$.require('inc/a.js', 'inc/style.css', function() {
+					start();
+					equals(a, 'a');
+					equals($('link[href=inc/style.css]').length, 1);
+				});
+			});
+
+			test("require one javascript file, one css file, and one image", function() {
+				setup();
+				stop();
+				$.require('inc/a.js', 'inc/style.css', 'inc/image.png', function() {
+					start();
+					equals(a, 'a');
+					equals($('link[href=inc/style.css]').length, 1);
+				});
+			})
 			
 			test("require a module containing one js file", function() {
 				setup();

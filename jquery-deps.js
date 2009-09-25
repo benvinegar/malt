@@ -44,12 +44,23 @@
 		callback();
 	};
 	
+	var getImage = function(file, callback) {
+		$("<img>").attr("src", file);
+		callback();
+	}
+	
 	var getFile = function(file, callback) {
 		var getter = null;
-		switch(file.match(/\.([A-Za-z]+)$/)[1]) {
-			case 'js' : getter = $.getScript; break;
-			case 'css': getter = getCSS;      break;
+		var extension = file.match(/\.([A-Za-z]+)$/)[1];
+		
+		if (extension == 'js') {
+			getter = $.getScript;
+		} else if (extension == 'css') {
+			getter = getCSS;
+		} else if (/png|jpg|jpeg|gif/.test(extension)) {
+			getter = getImage;
 		}
+
 		getter(file, callback);
 	};
 	
