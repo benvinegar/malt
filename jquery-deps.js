@@ -39,11 +39,17 @@
 		};
 	};
 	
-	$.module = function(name, files) {
+	$.module = function() {
+		var name  = arguments[0];
+		var files = $.makeArray(arguments).slice(1);
+
 		_modules[name] = new Module(files);
 	};
 	
-	$.require = function(files, callback) {
+	$.require = function() {
+		var files    = $.makeArray(arguments).slice(0, -1);
+		var callback = arguments[arguments.length - 1];
+
 		var dependency = new Dependency(files, callback);
 
 		$.each(dependency.files, function(k, file) {

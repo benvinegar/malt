@@ -8,12 +8,13 @@
 	<body>
 
 		<script>
-			$.module('package1', ['lib/a.js', 'lib/b.js']);
-			$.require(['package1'], function() {
+			$.module('package1', 'lib/a.js', 'lib/b.js');
+			
+			$.require('package1', function() {
 				alert(a);
 			});
 
-			$.require(['lib/b.js', 'lib/c.js'], function() {
+			$.require('lib/b.js', 'lib/c.js', function() {
 				alert(c);
 			});
 		</script>
