@@ -2,11 +2,12 @@
  * jQuery Deps: Non-blocking Javascript Dependency Manager
  */
 (function($) {
-	_deps   = {}; // file -> dependency map
-	_loaded = {}; // loaded files
+	_deps    = {}; // file -> dependency map
+	_loaded  = {}; // loaded files
+	_modules = {};
 	
 	var Dependency = function(files, callback) {
-		this.files = files;
+		this.files = (new Module(files)).flatten();
 		this.callback = callback;
 		
 		/**
@@ -21,11 +22,31 @@
 			});
 			return allLoaded;
 		}
-	}
+	};
+	
+	var Module = function(files) {
+		this.files = files;
+		this.flatten = function() {
+			var out = [];
+			$.each(this.files, function(k, file) {
+				if (typeof _modules[file] === 'object' ) {
+					$.merge(out, _modules[file].flatten());
+				} else {
+					out.push(file);
+				}
+			});
+			return out;
+		};
+	};
+	
+	$.module = function(name, files) {
+		_modules[name] = new Module(files);
+	};
+	
 	$.require = function(files, callback) {
 		var dependency = new Dependency(files, callback);
 
-		$.each(files, function(k, file) {
+		$.each(dependency.files, function(k, file) {
 			
 			if (typeof _loaded[file] === 'undefined') 
 			{
@@ -67,5 +88,5 @@
 				});
 			});
 		});
-	}
+	};
 })(jQuery);

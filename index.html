@@ -8,12 +8,8 @@
 	<body>
 
 		<script>
-			// $.deps.module('set1');
-			// $.deps.require('set1', function() {
-			// 	
-			// });
-
-			$.require(['lib/a.js', 'lib/b.js'], function() {
+			$.module('package1', ['lib/a.js', 'lib/b.js']);
+			$.require(['package1'], function() {
 				alert(a);
 			});
 
