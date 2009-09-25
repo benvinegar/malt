@@ -1,5 +1,20 @@
 /**
- * jQuery Deps: Non-blocking Javascript Dependency Manager
+ * jQuery Dependencies: Non-blocking Javascript Dependency Manager
+ *
+ * Usage: 
+ *
+ * // Define a module
+ * $.module('moduleName', 'file1.js', 'file2.js');
+ *
+ * // Require a module asynchronously:
+ * $.require('moduleName', function() {
+ *   doSomethingAfterFilesLoaded();
+ * });
+ *
+ * This work is distributed under the MIT License:
+ *   http://www.opensource.org/licenses/mit-license.php
+ *
+ * Copyright 2009 Ben Vinegar [ ben ! freshbooks dot com ]
  */
 (function($) {
 	_deps    = {}; // file -> dependency map
