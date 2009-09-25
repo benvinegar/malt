@@ -24,7 +24,7 @@
 				$.require.reset();
 			}
 
-			test("require one file", function() {
+			test("require one js file", function() {
 				setup();
 				stop();
 				$.require('inc/a.js', function() {
@@ -32,8 +32,8 @@
 					equals(a, 'a');
 				});
 			});
-
-			test("require two files", function() {
+			
+			test("require two js files", function() {
 				setup();
 				stop();
 				$.require('inc/a.js', 'inc/b.js', function() {
@@ -42,8 +42,8 @@
 					equals(b, 'b');
 				});
 			});
-
-			test("require a module containing one file", function() {
+			
+			test("require a module containing one js file", function() {
 				setup();
 				stop();
 				$.module('package', 'inc/a.js');
@@ -52,21 +52,32 @@
 					equals(a, 'a');
 				});
 			});
-
-			test("require a module containing one file", function() {
+			
+			test("require a module containing one js file", function() {
 				setup();
-				stop();
 				$.module('package', 'inc/a.js', 'inc/b.js');
+			
+				stop();
 				$.require('package', function() {
+					start();
 					equals(a, 'a');
 					equals(b, 'b');
-					start();
 				});
 			});
 			
-			// test("require a module containing a module with one file", function() {
-			// 	setup();
-			// });
+			test("require a module containing one js file and another module", function() {
+				setup();
+
+				$.module('package1', 'inc/a.js');
+				$.module('package2', 'package1', 'inc/b.js');
+
+				stop();
+				$.require('package2', function() {
+					start();
+					equals(a, 'a');
+					equals(b, 'b');
+				});
+			});
 		</script>
 	</body>
 </html>
