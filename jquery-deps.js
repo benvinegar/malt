@@ -39,6 +39,20 @@
 		};
 	};
 	
+	var getCSS = function(file, callback) {
+		$('head').append('<link rel="stylesheet" type="text/css" href="' + file + '"/>');
+		callback();
+	};
+	
+	var getFile = function(file, callback) {
+		var getter = null;
+		switch(file.match(/\.([A-Za-z]+)$/)[1]) {
+			case 'js' : getter = $.getScript; break;
+			case 'css': getter = getCSS;      break;
+		}
+		getter(file, callback);
+	};
+	
 	$.module = function() {
 		var name  = arguments[0];
 		var files = $.makeArray(arguments).slice(1);
@@ -75,7 +89,7 @@
 			}
 
 			// Attempt to fetch this file.
-			$.getScript(file, function() {
+			getFile(file, function() {
 
 				_loaded[file] = true;
 				

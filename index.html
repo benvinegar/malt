@@ -43,6 +43,29 @@
 				});
 			});
 			
+			test("require the same js file back-to-back", function() {
+				setup();
+				stop();
+				$.require('inc/a.js', function() {
+					start();
+					equals(a, 'a');
+				});
+				
+				$.require('inc/a.js', function() {
+					// Just want to make sure this callback actually hits
+					equals(a, 'a');
+				});
+			});
+			
+			test("require one css file", function() {
+				setup();
+				stop();
+				$.require('inc/style.css', function() {
+					start();
+					equals($('link[href=inc/style.css]').length, 1);
+				});
+			});
+			
 			test("require a module containing one js file", function() {
 				setup();
 				stop();
