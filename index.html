@@ -8,11 +8,16 @@
 	<body>
 
 		<script>
-			$.deps(['lib/a.js', 'lib/b.js'], function() {
+			// $.deps.module('set1');
+			// $.deps.require('set1', function() {
+			// 	
+			// });
+
+			$.require(['lib/a.js', 'lib/b.js'], function() {
 				alert(a);
 			});
 
-			$.deps(['lib/b.js', 'lib/c.js'], function() {
+			$.require(['lib/b.js', 'lib/c.js'], function() {
 				alert(c);
 			});
 		</script>

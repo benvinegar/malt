@@ -2,50 +2,70 @@
  * jQuery Deps: Non-blocking Javascript Dependency Manager
  */
 (function($) {
-	_deps   = {};
-	_loaded = {};
-	_globs  = {};
+	_deps   = {}; // file -> dependency map
+	_loaded = {}; // loaded files
 	
-	var _index = 0;
-	$.deps = function(files, callback) {
-		var count = 0;
-
-		var glob = {
-			files: files,
-			callback : callback
+	var Dependency = function(files, callback) {
+		this.files = files;
+		this.callback = callback;
+		
+		/**
+		 * Returns true if this dependency has been met
+		 */
+		this.allLoaded = function() {
+			var allLoaded = true;
+			$.each(this.files, function(k, file) {
+				if (_loaded[file] === false) {
+					allLoaded = false;
+				}
+			});
+			return allLoaded;
 		}
-		_globs[_index] = glob;
+	}
+	$.require = function(files, callback) {
+		var dependency = new Dependency(files, callback);
 
 		$.each(files, function(k, file) {
-			if (typeof _loaded[file] === 'undefined') {
-				_deps[file] = [_index];
+			
+			if (typeof _loaded[file] === 'undefined') 
+			{
+				// This is a brand new file we haven't seen yet.
+				_deps[file] = [dependency];
 				_loaded[file] = false;
-			} else if (typeof _deps[file] === 'object') {
-				_deps[file].push(_index);
+			} 
+			else if (typeof _deps[file] === 'object') 
+			{
+				// We've already seen this file. We don't need to add it to
+				// the "load-this-file" queue, but the file now has a new
+				// dependency it needs to be associated with.
+				_deps[file].push(dependency);
 				return;
-			} else {
+			} 
+			else 
+			{
+				// This file has already been loaded.
 				return;
 			}
 
+			// Attempt to fetch this file.
 			$.getScript(file, function() {
+
 				_loaded[file] = true;
-				var globIndexes = _deps[file];
-				$.each(globIndexes, function(k, globIdx) {
-					var glob = _globs[globIdx];
+				
+				// Get the list of dependencies associated with this file.
+				var dependencies = _deps[file];
+				
+				// Iterate through each associated dependency, and if that
+				// dependency has been satisfied (all files loaded), then
+				// launch the associated callback.
+				
+				$.each(dependencies, function(k, dependency) {
 
-					var allLoaded = true;
-					$.each(glob.files, function(k, file) {
-						if (_loaded[file] === false) {
-							allLoaded = false;
-						}
-					});
-
-					if (allLoaded) {
-						glob.callback();
+					if (dependency.allLoaded()) {
+						dependency.callback();
 					}
 				});
 			});
 		});
-		_index += 1;
 	}
 })(jQuery);
