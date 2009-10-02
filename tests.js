@@ -81,6 +81,20 @@ test("require the same js file back-to-back", function() {
 	});
 });
 
+test("require a js file, and on success, request the same js file", function() {
+	setup();
+	stop();
+	$.require('inc/a.js', function() {
+		start();
+		equals(a, 'a');
+		stop();
+		$.require('inc/a.js', function() {
+			start();
+			equals(a, 'a');
+		});
+	});
+});
+
 test("require a module containing one js file", function() {
 	setup();
 	stop();
