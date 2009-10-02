@@ -36,7 +36,7 @@
 				}
 			});
 			return allLoaded;
-		}
+		};
 	};
 	
 	var Module = function(resources) {
@@ -62,7 +62,7 @@
 	var getImage = function(file, callback) {
 		$("<img>").attr("src", file);
 		callback();
-	}
+	};
 	
 	var getFile = function(file, callback) {
 		var getter = null;
