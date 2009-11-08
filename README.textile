@@ -1,0 +1,80 @@
+h1. jquery-dependencies
+
+An JavaScript dependency management library built on jQuery.
+
+h2. Features
+
+ * JavaScript files are loaded asynchronously via jQuery's "getScript":http://docs.jquery.com/Ajax/jQuery.getScript method
+ * Prevents multiple includes of the same file
+ * Supports multiple file types:
+  ** JavaScript
+  ** Images
+  ** Stylesheets
+ * Can declare modules / aliases for groups of resources
+ 
+h2. Usage
+
+NOTE: See tests.js for live examples.
+
+h3. Single file
+
+If you have a block of code that depends on a single JavaScript file.
+
+<pre>
+<code>
+$.require('js/sammy.js', function() {
+  // execute this block once files are loaded
+});
+</code>
+</pre>
+
+h3. Multiple files
+
+If you have a block of code that depends on multiple JavaScript files.
+
+<pre>
+<code>
+$.require('js/sammy.js', 'js/cufon.js', function() {
+  // execute this block once files are loaded
+});
+</code>
+</pre>
+
+h3. Multiple file types
+
+You can require multiple file types, including image files and css.
+
+<pre>
+<code>
+$.require('js/facebox.js', 'css/facebox.css', function() {
+  // execute this block once files are loaded
+});
+</code>
+</pre>
+
+h3. Modules
+
+You can declare modules/aliases for groups of resources.
+
+<pre>
+<code>
+$.module('facebox', 'js/facebox.js', 'css/facebox.css');
+
+$.require('facebox', function() {
+  // execute when all module resources are loaded
+});
+</code>
+</pre>
+
+h3. Nested module dependencies
+
+<pre>
+<code>
+$.module('package1', 'a.js', 'b.js');
+$.module('package2', 'package1', 'c.js');
+
+$.require('package2', function() {
+  // executes when a.js, b.js and c.js have all been loaded
+});
+</code>
+</pre>
