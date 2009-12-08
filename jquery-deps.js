@@ -170,6 +170,24 @@
 		}
 	};
 	
+	makeArray = function(array) {
+		var ret = [];
+
+		if (array != null) {
+			var i = array.length;
+			// The window, strings (and functions) also have 'length'
+			if (i == null || typeof array === "string" || jQuery.isFunction(array) || array.setInterval) {
+				ret[0] = array;
+			} else {
+				while (i) {
+					ret[--i] = array[i];
+				}
+			}
+		}
+
+		return ret;
+	};
+	
 	var getCSS = function(file, callback) {
 		$('head').append('<link rel="stylesheet" type="text/css" href="' + file + '"/>');
 		callback();
@@ -197,13 +215,13 @@
 	
 	$.module = function() {
 		var name      = arguments[0];
-		var resources = $.makeArray(arguments).slice(1);
+		var resources = makeArray(arguments).slice(1);
 
 		_modules[name] = new Module(resources);
 	};
 	
 	$.require = function() {
-		var resources = $.makeArray(arguments).slice(0, -1);
+		var resources = makeArray(arguments).slice(0, -1);
 		var callback  = arguments[arguments.length - 1];
 
 		var dependency = new Dependency(resources, callback);
