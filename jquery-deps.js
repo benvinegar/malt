@@ -20,88 +20,39 @@
 var Malt = {};
 
 (function(Malt) {
-	_deps    = {}; // file -> dependency map
-	_loaded  = {}; // loaded files
-	_modules = {};
-	
-	var addHandler = function(elem, type, func) {
-		if (elem.addEventListener) {
-			elem.addEventListener(type, func, false);
-		}
-		else if (elem.attachEvent) {
-			elem.attachEvent("on" + type, func);
-		}
-	};
-
+	var _deps    = {}; // file -> dependency map
+	var _modules = {}; // module -> file map
+	var _loaded  = {}; // loaded resources
+		
+	var _queuedScripts = [];
+		
 	var loadScript = function(url, onload) {
-		// pick the best loading function
-		var loadFunc = loadScriptXhrInjection;
-		if (isDifferentDomain(url)) {
-			if (-1 != navigator.userAgent.indexOf('Firefox') || 
-				-1 != navigator.userAgent.indexOf('Opera')) {
-				loadFunc = loadScriptDomElement;
-			}
-			else {
-				loadFunc = loadScriptDocWrite;
-			}
-		}
-		loadFunc(url, onload);
+		loadScriptXhrInjection(url, onload);
 	};
-
-	var isDifferentDomain = function(url) {
-		if (0 === url.indexOf('http://') || 0 === url.indexOf('https://')) {
-			var mainDomain = document.location.protocol + "://" + document.location.host + "/";
-			return (0 !== url.indexOf(mainDomain));
-		}
-		return false;
-	};
-
-	var loadScriptDomElement = function(url, onload) {
-		var domscript = document.createElement('script');
-		domscript.src = url;
-		if (onload) {
-			domscript.onloadDone = false;
-			domscript.onload = function() { 
-				if (!domscript.onloadDone) {
-					domscript.onloadDone = true; 
-					onload(); 
-				}
-			};
-			domscript.onreadystatechange = function() {
-				if (( "loaded" === domscript.readyState || "complete" === domscript.readyState ) && !domscript.onloadDone) {
-					domscript.onloadDone = true;
-					domscript.onload();
-				}
-			};
-		}
-		document.getElementsByTagName('head')[0].appendChild(domscript);
-	};
-	
-	var loadScriptDocWrite = function(url, onload) {
-		document.write('<scr' + 'ipt src="' + url + 
-					   '" type="text/javascript"></scr' + 'ipt>');
-		if (onload) {
-			// we can't tie it to the script's onload, so use window
-			// thus, it doesn't fire as early as it might have
-			addHandler(window, "load", onload);
-		}
-	};
-
+		
 	var loadScriptXhrInjection = function(url, onload) {
-
+		var queueIndex = _queuedScripts.length;
+		_queuedScripts[queueIndex] = null;
+		
 		var xhrObj = getXHRObject();
 		xhrObj.onreadystatechange = function() { 
 			if (xhrObj.readyState == 4) {
-				var se = document.createElement('script');
-				document.getElementsByTagName('head')[0].appendChild(se);
-				se.text = xhrObj.responseText;
-				if ( onload ) {
-					onload();
-				}
+				_queuedScripts[queueIndex] = xhrObj.responseText;
+				onload();
 			}
 		};
 		xhrObj.open('GET', url, true);
 		xhrObj.send('');
+	};
+	
+	var injectQueuedScripts = function() {
+		var len = _queuedScripts.length;
+		for (var i = 0; i < len; i++) {
+			var response = _queuedScripts[i];
+			var se = document.createElement('script');
+			document.getElementsByTagName('head')[0].appendChild(se);
+			se.text = response;
+		}
 	};
 
 	var getXHRObject = function() {
@@ -256,6 +207,7 @@ var Malt = {};
 				each(dependencies, function(k, dependency) {
 
 					if (dependency.allLoaded()) {
+						injectQueuedScripts();
 						dependency.callback();
 					}
 				});
