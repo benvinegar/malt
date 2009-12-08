@@ -4,10 +4,10 @@
  * Usage: 
  *
  * // Define a module
- * $.module('moduleName', 'file1.js', 'file2.js');
+ * Malt.module('moduleName', 'file1.js', 'file2.js');
  *
  * // Require a module asynchronously:
- * $.require('moduleName', function() {
+ * Malt.require('moduleName', function() {
  *   doSomethingAfterFilesLoaded();
  * });
  *
@@ -17,7 +17,9 @@
  * Copyright 2009 Ben Vinegar [ ben ! freshbooks dot com ]
  */
 
-(function($) {
+var Malt = {};
+
+(function(Malt) {
 	_deps    = {}; // file -> dependency map
 	_loaded  = {}; // loaded files
 	_modules = {};
@@ -70,7 +72,7 @@
 					domscript.onloadDone = true;
 					domscript.onload();
 				}
-			}
+			};
 		}
 		document.getElementsByTagName('head')[0].appendChild(domscript);
 	};
@@ -85,9 +87,7 @@
 		}
 	};
 
-	var queuedScripts = [];
-
-	loadScriptXhrInjection = function(url, onload) {
+	var loadScriptXhrInjection = function(url, onload) {
 
 		var xhrObj = getXHRObject();
 		xhrObj.onreadystatechange = function() { 
@@ -104,7 +104,7 @@
 		xhrObj.send('');
 	};
 
-	getXHRObject = function() {
+	var getXHRObject = function() {
 		var xhrObj = false;
 		try {
 			xhrObj = new XMLHttpRequest();
@@ -155,7 +155,7 @@
 			var resource;
 			each(this.resources, function(k, resource) {
 				if (typeof _modules[resource] === 'object' ) {
-					$.merge(out, _modules[resource].flatten());
+					out = out.concat(_modules[resource].flatten());
 				} else {
 					out.push(resource);
 				}
@@ -164,27 +164,20 @@
 		};
 	};
 	
-	each = function(arr, callback) {
+	var each = function(arr, callback) {
 		for (var i = 0; i < arr.length; i++) {
 			callback(i, arr[i]);
 		}
 	};
 	
-	makeArray = function(array) {
+	var makeArray = function(array) {
 		var ret = [];
-
 		if (array != null) {
 			var i = array.length;
-			// The window, strings (and functions) also have 'length'
-			if (i == null || typeof array === "string" || jQuery.isFunction(array) || array.setInterval) {
-				ret[0] = array;
-			} else {
-				while (i) {
-					ret[--i] = array[i];
-				}
+			while (i) {
+				ret[--i] = array[i];
 			}
 		}
-
 		return ret;
 	};
 	
@@ -213,14 +206,14 @@
 		getter(file, callback);
 	};
 	
-	$.module = function() {
+	Malt.module = function() {
 		var name      = arguments[0];
 		var resources = makeArray(arguments).slice(1);
 
 		_modules[name] = new Module(resources);
 	};
 	
-	$.require = function() {
+	Malt.require = function() {
 		var resources = makeArray(arguments).slice(0, -1);
 		var callback  = arguments[arguments.length - 1];
 
@@ -271,9 +264,9 @@
 	};
 	
 
-	$.require.reset = function() {
+	Malt.require.reset = function() {
 		_deps    = {}; // file -> dependency map
 		_loaded  = {}; // loaded files
 		_modules = {};
 	};
-})(jQuery);
+})(Malt);
