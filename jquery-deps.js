@@ -139,7 +139,7 @@
 		 */
 		this.allLoaded = function() {
 			var allLoaded = true;
-			$.each(this.files, function(k, file) {
+			each(this.files, function(k, file) {
 				if (_loaded[file] === false) {
 					allLoaded = false;
 				}
@@ -152,7 +152,8 @@
 		this.resources = resources;
 		this.flatten = function() {
 			var out = [];
-			$.each(this.resources, function(k, resource) {
+			var resource;
+			each(this.resources, function(k, resource) {
 				if (typeof _modules[resource] === 'object' ) {
 					$.merge(out, _modules[resource].flatten());
 				} else {
@@ -161,6 +162,12 @@
 			});
 			return out;
 		};
+	};
+	
+	each = function(arr, callback) {
+		for (var i = 0; i < arr.length; i++) {
+			callback(i, arr[i]);
+		}
 	};
 	
 	var getCSS = function(file, callback) {
@@ -201,7 +208,7 @@
 
 		var dependency = new Dependency(resources, callback);
 
-		$.each(dependency.files, function(k, file) {
+		each(dependency.files, function(k, file) {
 			
 			if (typeof _loaded[file] === 'undefined') 
 			{
@@ -235,7 +242,7 @@
 				// dependency has been satisfied (all files loaded), then
 				// launch the associated callback.
 				
-				$.each(dependencies, function(k, dependency) {
+				each(dependencies, function(k, dependency) {
 
 					if (dependency.allLoaded()) {
 						dependency.callback();
