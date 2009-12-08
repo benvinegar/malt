@@ -82,7 +82,7 @@ var Malt = {};
 	};
 
 	var Dependency = function(resources, callback) {
-		this.files = (new Module(resources)).flatten();
+		this.resources = (new Module(resources)).flatten();
 		this.callback = callback;
 		
 		/**
@@ -90,8 +90,8 @@ var Malt = {};
 		 */
 		this.allLoaded = function() {
 			var allLoaded = true;
-			each(this.files, function(k, file) {
-				if (_loaded[file] === false) {
+			each(this.resources, function(k, resource) {
+				if (_loaded[resource] === false) {
 					allLoaded = false;
 				}
 			});
@@ -142,7 +142,7 @@ var Malt = {};
 		callback();
 	};
 	
-	var getFile = function(file, callback) {
+	var getResource = function(file, callback) {
 		var getter = null;
 		var extension = file.match(/\.([A-Za-z]+)$/)[1];
 		
@@ -170,38 +170,38 @@ var Malt = {};
 
 		var dependency = new Dependency(resources, callback);
 
-		each(dependency.files, function(k, file) {
+		each(dependency.resources, function(k, resource) {
 			
-			if (typeof _loaded[file] === 'undefined') 
+			if (typeof _loaded[resource] === 'undefined') 
 			{
-				// This is a brand new file we haven't seen yet.
-				_deps[file] = [dependency];
-				_loaded[file] = false;
+				// This is a brand new resource we haven't seen yet.
+				_deps[resource] = [dependency];
+				_loaded[resource] = false;
 			} 
-			else if (typeof _deps[file] === 'object') 
+			else if (typeof _deps[resource] === 'object') 
 			{
-				// We've already seen this file. We don't need to add it to
-				// the "load-this-file" queue, but the file now has a new
+				// We've already seen this resource. We don't need to add it to
+				// the "load-this-resource" queue, but the resource now has a new
 				// dependency it needs to be associated with.
-				_deps[file].push(dependency);
+				_deps[resource].push(dependency);
 				return;
 			} 
 			else 
 			{
-				// This file has already been loaded.
+				// This resource has already been loaded.
 				return;
 			}
 
-			// Attempt to fetch this file.
-			getFile(file, function() {
+			// Attempt to fetch this resource.
+			getResource(resource, function() {
 
-				_loaded[file] = true;
+				_loaded[resource] = true;
 				
-				// Get the list of dependencies associated with this file.
-				var dependencies = _deps[file];
+				// Get the list of dependencies associated with this resource.
+				var dependencies = _deps[resource];
 				
 				// Iterate through each associated dependency, and if that
-				// dependency has been satisfied (all files loaded), then
+				// dependency has been satisfied (all resources loaded), then
 				// launch the associated callback.
 				
 				each(dependencies, function(k, dependency) {
