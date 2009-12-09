@@ -1,5 +1,5 @@
 /**
- * jQuery Dependencies: Non-blocking Javascript Dependency Manager
+ * Malt: Non-blocking Javascript Dependency Manager
  *
  * Usage: 
  *
