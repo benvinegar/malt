@@ -108,7 +108,9 @@ var Malt = {};
   /**
    * Generic resource getter - hands off to one of the methods above
    */
-  var getResource = function(file, callback) {
+  var getResource = function(resource, callback) {
+    var file = resource.name;
+    resource.status = 'loading';
     var loader = null;
     var extension = file.match(/\.([A-Za-z]+)$/)[1];
     
@@ -127,9 +129,64 @@ var Malt = {};
    * Class to encapsulate a dependency. A dependency is a callback method,
    * and a list of resources upon which that dependency relies.
    */
-  var Dependency = function(resources, callback) {
-    this.resources = (new Module(resources)).flatten();
-    this.callback = callback;
+  var _resourceMap = {};
+
+  var Dependency = function(urls, callback) {
+    var self = this;
+    self.resources = [];
+
+    each(urls, function(k, url) {
+      var resource;
+      if (_resourceMap[url]) {
+        resource = _resourceMap[url];
+      } else {
+        resource = {
+          name: url,
+          status: null,
+          dependencies: []
+        };
+      }
+      self.resources.push(resource);
+    });
+    self.callback = callback;
+    
+    this.load = function() {
+      each(self.resources, function(k, resource) {
+        if (_modules[resource.name]) {
+          return _modules[resource.name].load();
+        }
+        
+        if (resource.status == null) {
+          resource.dependencies.push(self);
+          // This is a brand new resource that we haven't done anything with yet
+        } else if (resource.status == 'loading') {
+          // This resource is already in the process of loading - just attach
+          // the dependency to it, so that when it finishes, it will execute
+          // the callback
+          resource.dependencies.push(self);
+          return;
+        } else {
+          // This file has already loaded
+        }
+        
+        // Attempt to fetch this resource.
+        getResource(resource, function() {
+
+          resource.status = 'loaded';
+
+          // Iterate through each associated dependency, and if that
+          // dependency has been satisfied (all resources loaded), then
+          // launch the associated callback.
+          each(resource.dependencies, function(k, dependency) {
+
+            if (dependency.allLoaded()) {
+              self.insertQueuedScripts();
+              self.callback && self.callback();
+            }
+          });
+        });
+      });
+    };
     
     /**
      * Returns true if this dependency has been met
@@ -137,7 +194,7 @@ var Malt = {};
     this.allLoaded = function() {
       var allLoaded = true;
       each(this.resources, function(k, resource) {
-        if (_loaded[resource] === false) {
+        if (resource.status != 'loaded') {
           allLoaded = false;
         }
       });
@@ -150,17 +207,17 @@ var Malt = {};
      */
     this.insertQueuedScripts = function() {
       each(this.resources, function(k, resource) {
-        if (!_queuedScripts[resource]) {
+        if (!_queuedScripts[resource.name]) {
           return;
         }
         
-        var response = _queuedScripts[resource];
+        var response = _queuedScripts[resource.name];
         var se = document.createElement('script');
         document.getElementsByTagName('head')[0].appendChild(se);
         se.text = response;
         
         // No longer queued
-        _queuedScripts[resource] = null;
+        _queuedScripts[resource.name] = null;
       });
     };
   };
@@ -169,25 +226,26 @@ var Malt = {};
    * Class to encapsulate a module declaration, which ties a string/key
    * to a list of resources.
    */
-  var Module = function(resources) {
-    this.resources = resources;
-    
-    /**
-     * Returns a flattened array of resources (including sub-modules)
-     */
-    this.flatten = function() {
-      var out = [];
-      var resource;
-      each(this.resources, function(k, resource) {
-        if (typeof _modules[resource] === 'object' ) {
-          out = out.concat(_modules[resource].flatten());
-        } else {
-          out.push(resource);
-        }
-      });
-      return out;
-    };
-  };
+  // var Module = function(resources, callback) {
+  //   this.resources = resources;
+  //   this.callback = callback;
+  //   
+  //   /**
+  //    * Returns a flattened array of resources (including sub-modules)
+  //    */
+  //   this.flatten = function() {
+  //     var out = [];
+  //     var resource;
+  //     each(this.resources, function(k, resource) {
+  //       if (typeof _modules[resource] === 'object' ) {
+  //         out = out.concat(_modules[resource].flatten());
+  //       } else {
+  //         out.push(resource);
+  //       }
+  //     });
+  //     return out;
+  //   };
+  // };
   
   //-----------------------------------------------------
   // Public Methods
@@ -195,9 +253,17 @@ var Malt = {};
   
   Malt.module = function() {
     var name      = arguments[0];
-    var resources = makeArray(arguments).slice(1);
-
-    _modules[name] = new Module(resources);
+    var urls      = [];
+    var callback  = arguments[arguments.length - 1];
+    
+    if (typeof callback !== 'object') {
+      callback = null;
+      urls = makeArray(arguments).slice(1);
+    } else {
+      urls = makeArray(arguments).slice(0, -1);
+    }
+        
+    _modules[name] = new Dependency(urls, callback); //Module(resources, callback);
   };
   
   Malt.require = function() {
@@ -205,50 +271,51 @@ var Malt = {};
     var callback  = arguments[arguments.length - 1];
 
     var dependency = new Dependency(resources, callback);
+    dependency.load();
 
-    each(dependency.resources, function(k, resource) {
-      
-      if (typeof _loaded[resource] === 'undefined') 
-      {
-        // This is a brand new resource we haven't seen yet.
-        _deps[resource] = [dependency];
-        _loaded[resource] = false;
-      } 
-      else if (typeof _deps[resource] === 'object') 
-      {
-        // We've already seen this resource. We don't need to add it to
-        // the "load-this-resource" queue, but the resource now has a new
-        // dependency it needs to be associated with.
-        _deps[resource].push(dependency);
-        return;
-      } 
-      else 
-      {
-        // This resource has already been loaded.
-        return;
-      }
-
-      // Attempt to fetch this resource.
-      getResource(resource, function() {
-
-        _loaded[resource] = true;
-        
-        // Get the list of dependencies associated with this resource.
-        var dependencies = _deps[resource];
-        
-        // Iterate through each associated dependency, and if that
-        // dependency has been satisfied (all resources loaded), then
-        // launch the associated callback.
-        
-        each(dependencies, function(k, dependency) {
-
-          if (dependency.allLoaded()) {
-            dependency.insertQueuedScripts();
-            dependency.callback();
-          }
-        });
-      });
-    });
+    // each(dependency.resources, function(k, resource) {
+    //   
+    //   if (typeof _loaded[resource] === 'undefined') 
+    //   {
+    //     // This is a brand new resource we haven't seen yet.
+    //     _deps[resource] = [dependency];
+    //     _loaded[resource] = false;
+    //   } 
+    //   else if (typeof _deps[resource] === 'object') 
+    //   {
+    //     // We've already seen this resource. We don't need to add it to
+    //     // the "load-this-resource" queue, but the resource now has a new
+    //     // dependency it needs to be associated with.
+    //     _deps[resource].push(dependency);
+    //     return;
+    //   } 
+    //   else 
+    //   {
+    //     // This resource has already been loaded.
+    //     return;
+    //   }
+    // 
+    //   // Attempt to fetch this resource.
+    //   getResource(resource, function() {
+    // 
+    //     _loaded[resource] = true;
+    //     
+    //     // Get the list of dependencies associated with this resource.
+    //     var dependencies = _deps[resource];
+    //     
+    //     // Iterate through each associated dependency, and if that
+    //     // dependency has been satisfied (all resources loaded), then
+    //     // launch the associated callback.
+    //     
+    //     each(dependencies, function(k, dependency) {
+    // 
+    //       if (dependency.allLoaded()) {
+    //         dependency.insertQueuedScripts();
+    //         dependency.callback();
+    //       }
+    //     });
+    //   });
+    // });
   };  
 
   Malt.require.reset = function() {
