@@ -11,8 +11,8 @@ test("require one js file", function() {
   setup();
   stop();
   Malt.require('inc/a.js', function() {
-    start();
     equals(a, 'a');
+    start();
   });
 });
 
@@ -20,8 +20,8 @@ test("require one css file", function() {
   setup();
   stop();
   Malt.require('inc/style.css', function() {
-    start();
     equals($('link[href=inc/style.css]').length, 1);
+    start();
   });
 });
 
@@ -29,11 +29,11 @@ test("request one image file", function() {
   setup();
   stop();
   Malt.require('inc/image.png', function() {
-    start();
     // There's nothing we can do here besides make sure the
     // callback fired, because the pre-loading mechanism doesn't
     // actually append any <img> tags to the document.
     ok("callback fired");
+    start();
   });
 });
 
@@ -41,9 +41,9 @@ test("require one js file and one css file", function() {
   setup();
   stop();
   Malt.require('inc/a.js', 'inc/style.css', function() {
-    start();
     equals(a, 'a');
     equals($('link[href=inc/style.css]').length, 1);
+    start();
   });
 });
 
@@ -51,9 +51,9 @@ test("require one javascript file, one css file, and one image", function() {
   setup();
   stop();
   Malt.require('inc/a.js', 'inc/style.css', 'inc/image.png', function() {
-    start();
     equals(a, 'a');
     equals($('link[href=inc/style.css]').length, 1);
+    start();
   });
 });
 
@@ -61,9 +61,9 @@ test("require two js files", function() {
   setup();
   stop();
   Malt.require('inc/a.js', 'inc/b.js', function() {
-    start();
     equals(a, 'a');
     equals(b, 'b');
+    start();
   });
 });
 
@@ -82,17 +82,15 @@ test("require the same js file back-to-back", function() {
 });
 
 test("require a js file, and on success, request the same js file", function() {
-	setup();
-	stop();
-	Malt.require('inc/a.js', function() {
-		start();
-		equals(a, 'a');
-		stop();
-		Malt.require('inc/a.js', function() {
-			start();
-			equals(a, 'a');
-		});
-	});
+ setup();
+ stop();
+ Malt.require('inc/a.js', function() {
+   equals(a, 'a');
+   Malt.require('inc/a.js', function() {
+     equals(a, 'a');
+     start();
+   });
+ });
 });
 
 test("require a module containing one js file", function() {
@@ -102,6 +100,17 @@ test("require a module containing one js file", function() {
   Malt.require('package', function() {
     start();
     equals(a, 'a');
+  });
+});
+
+test("require a module that has its own callback function", function() {
+  setup();
+  stop();
+  Malt.module('package', 'inc/a.js', function() {
+    start();
+    equals(a, 'a');
+  });
+  Malt.require('package', function() {
   });
 });
 
