@@ -96,12 +96,18 @@ var Malt = {};
   };
 
   var loadCSS = function(file, callback) {
-    $('head').append('<link rel="stylesheet" type="text/css" href="' + file + '"/>');
+    var link = document.createElement('link');
+    link.setAttribute('rel', 'stylesheet');
+    link.setAttribute('type', 'text/css');
+    link.setAttribute('href', file);
+    var head = document.getElementsByTagName('head')[0];
+    head.appendChild(link);
     callback();
   };
 
   var loadImage = function(file, callback) {
-    $("<img>").attr("src", file);
+    var image = new Image();
+    image.src = file;
     callback();
   };
 
