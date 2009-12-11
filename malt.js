@@ -209,7 +209,7 @@ var Malt = {};
       }
       
       if (!this.children) {
-        return self.status == 'loaded';
+        return self.status == 'loaded'; 
       } else {
         var allLoaded = true;
         each(this.children, function(k, child) {
@@ -263,6 +263,12 @@ var Malt = {};
   Malt.require = function() {
     var urls      = makeArray(arguments).slice(0, -1);
     var callback  = arguments[arguments.length - 1];
+    
+    // If a sole parameter was passed
+    if (typeof callback === 'string') {
+      urls = [callback];
+      callback = null;
+    }
 
     var resource = new Resource(urls, callback);
     resource.load();
