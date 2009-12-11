@@ -100,7 +100,7 @@ var Malt = {};
 
   var getGeneric = function(file, callback) {
     var loader = null;
-    var extension = file.match(/\.([A-Za-z]+)$/)[1];
+    var extension = file.match(/\.([^\.]+)$/)[1];
 
     if (extension == 'js') {
       loader = loadScript;
@@ -119,6 +119,7 @@ var Malt = {};
 
   var Resource = function(url, callback) {
     var self = this;
+    
     self.name = url;          // Symbolic name, if one exists
     self.status = null;       // Loading status: null, 'loading', or 'loaded'
     self.parents = [];        // Resources that are "watching" this resource (parents)
