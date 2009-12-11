@@ -1,16 +1,17 @@
-h1. jquery-dependencies
+h1. Malt
 
-An JavaScript dependency management library built on jQuery.
+An asynchronous JavaScript dependency management library.
 
 h2. Features
 
- * JavaScript files are loaded asynchronously via jQuery's "getScript":http://docs.jquery.com/Ajax/jQuery.getScript method
+ * JavaScript files are loaded asynchronously via XHR
+ * Preserves execution order of scripts
  * Prevents multiple includes of the same file
+ * Can declare modules / aliases for groups of resources
  * Supports multiple file types:
   ** JavaScript
   ** Images
   ** Stylesheets
- * Can declare modules / aliases for groups of resources
  
 h2. Usage
 
@@ -22,7 +23,7 @@ If you have a block of code that depends on a single JavaScript file.
 
 <pre>
 <code>
-$.require('js/sammy.js', function() {
+Malt.require('js/sammy.js', function() {
   // execute this block once files are loaded
 });
 </code>
@@ -34,7 +35,7 @@ If you have a block of code that depends on multiple JavaScript files.
 
 <pre>
 <code>
-$.require('js/sammy.js', 'js/cufon.js', function() {
+Malt.require('js/sammy.js', 'js/cufon.js', function() {
   // execute this block once files are loaded
 });
 </code>
@@ -46,7 +47,7 @@ You can require multiple file types, including image files and css.
 
 <pre>
 <code>
-$.require('js/facebox.js', 'css/facebox.css', function() {
+Malt.require('js/facebox.js', 'css/facebox.css', function() {
   // execute this block once files are loaded
 });
 </code>
@@ -58,10 +59,12 @@ You can declare modules/aliases for groups of resources.
 
 <pre>
 <code>
-$.module('facebox', 'js/facebox.js', 'css/facebox.css');
+$.module('facebox', 'js/facebox.js', 'css/facebox.css', function() {
+  // initialize facebox
+});
 
-$.require('facebox', function() {
-  // execute when all module resources are loaded
+Malt.require('facebox', function() {
+  // execute after all resources loaded, initialized
 });
 </code>
 </pre>
@@ -73,7 +76,7 @@ h3. Nested module dependencies
 $.module('package1', 'a.js', 'b.js');
 $.module('package2', 'package1', 'c.js');
 
-$.require('package2', function() {
+Malt.require('package2', function() {
   // executes when a.js, b.js and c.js have all been loaded
 });
 </code>
