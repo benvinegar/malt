@@ -12,22 +12,21 @@ var Malt = {};
   // A map of all available modules
   var _modules = {};
   
+  // A log of resources downloaded; used for testing
+  var _log = [];
+  
   //-----------------------------------------------------
   // Private Utility Methods
   //=====================================================
 
-  /**
-   * A clone of jQuery's $.each utility method
-   */
+  // A clone of jQuery's $.each utility method
   var each = function(arr, callback) {
     for (var i = 0; i < arr.length; i++) {
       callback(i, arr[i]);
     }
   };
 
-  /**
-   * A clone of jQuery's $.makeArray utility method
-   */
+  // A clone of jQuery's $.makeArray utility method
   var makeArray = function(array) {
     var ret = [];
     if (array != null) {
@@ -97,9 +96,8 @@ var Malt = {};
     callback();
   };
 
-  /**
-   * Generic resource getter - hands off to one of the methods above
-   */
+  // Generic resource getter - hands off to one of the methods above
+
   var getGeneric = function(file, callback) {
     var loader = null;
     var extension = file.match(/\.([A-Za-z]+)$/)[1];
@@ -115,32 +113,43 @@ var Malt = {};
     loader(file, callback);
   };
 
-  /**
-   * Class to encapsulate a dependency. A dependency is a callback method,
-   * and a list of resources upon which that dependency relies.
-   */
+
+   // Class to encapsulate a resource. A resource can be a single file (leaf node),
+   // or it can be a collection of many resources.
 
   var Resource = function(url, callback) {
     var self = this;
-    self.name = url;
-    self.status = null;
-    self.watchers = [];
-    self.callback = callback;
-    self.children = null;
+    self.name = url;          // Symbolic name, if one exists
+    self.status = null;       // Loading status: null, 'loading', or 'loaded'
+    self.parents = [];        // Resources that are "watching" this resource (parents)
+    self.callback = callback; // Callback to execute once resource is done loading
+    self.children = null;     // Child resources (if they exist)
 
+    // If we're passed an array for url, that means this resource is composed
+    // of many resources
     if (typeof url === 'object') {
       self.children = [];
+      // For each child resource ...
       each(url, function(k, u) {
         var resource;
+        
+        // Check the _resourceMap to see if we're already tracking this
+        // resource (we've seen it before)
         if (_resourceMap[u]) {
-          // We're already tracking this resource
           resource = _resourceMap[u];
-        } else {
+        } 
+        else {
+          // Nope - this is a new resource.
+          
+          // Second, see if there's a module defined for any of these
+          // resources.
           if (_modules[u]) {
             resource = _modules[u];
           } else {
             resource = new Resource(u);
           }
+          
+          // Add it to the resource map. So we don't repeat ourselves later.
           _resourceMap[u] = resource;
         }
         self.children.push(resource);
@@ -152,38 +161,52 @@ var Malt = {};
         self.status = 'loading';
         // This is a brand new self that we haven't done anything with yet
       } else {
+        // Either loading or done -- do nothing. The loading process will
+        // handle all the work once it finishes.
         return;
       }
       
+      // If this is a leaf node, then we're dealing with an individual file,
+      // so just fetch the file.
       if (!self.children) {
         getGeneric(self.name, function() {
           self.status = 'loaded';
+          _log.push(self.name);
 
-          // Iterate through each associated dependency, and if that
-          // dependency has been satisfied (all resources loaded), then
-          // launch the associated callback.
-          self.refreshWatchers();
+          // Walk up the tree and find out if any parent resources have
+          // been satisfied
+          self.updateParents();
         });
       } else {
+        // This resource has further children. Execute #load for each of them.
         each(self.children, function(k, resource) {
-          resource.watchers.push(self);
+          resource.parents.push(self);
           resource.load();
         });
       }
     };
     
-    this.refreshWatchers = function() {
-      each(self.watchers, function(k, watcher) {
-        if (watcher.status == 'loaded' || watcher.isLoaded()) {
-          watcher.status = 'loaded';
-          watcher.insertQueuedScripts();
-          watcher.callback && watcher.callback();
-          watcher.refreshWatchers();
+    // Walk up the tree, and for each parent resource, see if it has become
+    // satisfied as a result of whatever loaded resource triggered this function.
+    this.updateParents = function() {
+      each(self.parents, function(k, parent) {
+        if (parent.isLoaded()) {
+          
+          // Mark as loaded so we don't have to look *down* the tree again.
+          parent.status = 'loaded';
+          parent.insertQueuedScripts();
+          parent.callback && parent.callback();
+          parent.updateParents();
         }
       });
     };
     
+    // Returns true if a resource is loaded.
     this.isLoaded = function() {
+      if (this.status == 'loaded') {
+        return true;
+      }
+      
       if (!this.children) {
         return self.status == 'loaded';
       } else {
@@ -197,10 +220,9 @@ var Malt = {};
       }
     };
     
-    /**
-     * Take all of the deferred scripts that belong to this
-     * dependency and inject them into the page.
-     */
+
+    // Take all of the deferred scripts that belong to this
+    // dependency and inject them into the page.
     this.insertQueuedScripts = function() {
       each(this.children, function(k, resource) {
         if (!_queuedScripts[resource.name]) {
@@ -249,5 +271,10 @@ var Malt = {};
     _queuedScripts = {};
     _resourceMap = {};
     _modules = {};
+    _log = [];
   };
+  
+  Malt.getLog = function() {
+    return _log;
+  }
 })(Malt);

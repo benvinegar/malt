@@ -63,6 +63,7 @@ test("require two js files", function() {
   Malt.require('inc/a.js', 'inc/b.js', function() {
     equals(a, 'a');
     equals(b, 'b');
+    equals(Malt.getLog().length, 2);
     start();
   });
 });
@@ -73,11 +74,14 @@ test("require two identical js files, back-to-back", function() {
   Malt.require('inc/a.js', function() {
     start();
     equals(a, 'a');
+    equals(Malt.getLog()[0], 'inc/a.js');
   });
   
   Malt.require('inc/a.js', function() {
     // Just want to make sure this callback actually hits
     equals(a, 'a');
+    // And we didn't actually load another file
+    equals(Malt.getLog().length, 1);
   });
 });
 
@@ -88,6 +92,10 @@ test("require one js file, and on success, request the same js file", function()
    equals(a, 'a');
    Malt.require('inc/a.js', function() {
      equals(a, 'a');
+
+     // Make sure we didn't actually fetch the file twice
+     equals(Malt.getLog().length, 1);
+
      start();
    });
  });
