@@ -4,7 +4,7 @@ function setup() {
 	delete c;
 	$('link[href=inc/style.css]').remove();
 	$('img[href=inc/image.png]').remove();
-	Malt.require.reset();
+	Malt.reset();
 }
 
 test("require one js file", function() {

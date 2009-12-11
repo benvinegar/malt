@@ -1,31 +1,17 @@
-/**
- * Malt: Non-blocking Javascript Dependency Manager
- *
- * Usage:
- *
- * // Define a module
- * Malt.module('moduleName', 'file1.js', 'file2.js');
- *
- * // Require a module asynchronously:
- * Malt.require('moduleName', function() {
- *   doSomethingAfterFilesLoaded();
- * });
- *
- * This work is distributed under the MIT License:
- *   http://www.opensource.org/licenses/mit-license.php
- *
- * Copyright 2009 Ben Vinegar [ ben ! freshbooks dot com ]
- */
-
 var Malt = {};
 
 (function(Malt) {
-  var _deps    = {}; // file -> dependency map
-  var _modules = {}; // module -> file map
-  var _loaded  = {}; // loaded resources
 
+  // Script bodies that have been fetched via XHR, but haven't yet
+  // been evaled.
   var _queuedScripts = [];
-
+  
+  // Keeps track of already loaded (or loading) resources
+  var _resourceMap = {};
+  
+  // A map of all available modules
+  var _modules = {};
+  
   //-----------------------------------------------------
   // Private Utility Methods
   //=====================================================
@@ -133,7 +119,6 @@ var Malt = {};
    * Class to encapsulate a dependency. A dependency is a callback method,
    * and a list of resources upon which that dependency relies.
    */
-  var _resourceMap = {};
 
   var Resource = function(url, callback) {
     var self = this;
@@ -260,7 +245,7 @@ var Malt = {};
     resource.load();
   };
 
-  Malt.require.reset = function() {
+  Malt.reset = function() {
     _queuedScripts = {};
     _resourceMap = {};
     _modules = {};

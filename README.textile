@@ -10,7 +10,7 @@ h2. Features
  * Can declare modules / aliases for groups of resources
  * Supports multiple file types:
   ** JavaScript
-  ** Images
+  ** Images (which become preloaded)
   ** Stylesheets
  
 h2. Usage
@@ -81,3 +81,9 @@ Malt.require('package2', function() {
 });
 </code>
 </pre>
+
+h2. License
+
+MIT License. See LICENSE for more information.
+
+Malt includes code originally created by Steve Souders ("asynchronous script loading":http://stevesouders.com/efws/links.php?ex#Chapter4).
