@@ -15,7 +15,7 @@ h2. Features
  
 h2. Usage
 
-NOTE: See tests.js for live examples.
+NOTE: See tests.js for live examples. Or "run the test suite live":http://bentlegen.github.com/malt/.
 
 h3. Single file
 
