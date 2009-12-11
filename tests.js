@@ -47,7 +47,7 @@ test("require one js file and one css file", function() {
   });
 });
 
-test("require one javascript file, one css file, and one image", function() {
+test("require one js file, one css file, and one image file", function() {
   setup();
   stop();
   Malt.require('inc/a.js', 'inc/style.css', 'inc/image.png', function() {
@@ -67,7 +67,7 @@ test("require two js files", function() {
   });
 });
 
-test("require the same js file back-to-back", function() {
+test("require two identical js files, back-to-back", function() {
   setup();
   stop();
   Malt.require('inc/a.js', function() {
@@ -81,7 +81,7 @@ test("require the same js file back-to-back", function() {
   });
 });
 
-test("require a js file, and on success, request the same js file", function() {
+test("require one js file, and on success, request the same js file", function() {
  setup();
  stop();
  Malt.require('inc/a.js', function() {
@@ -103,17 +103,6 @@ test("require a module containing one js file", function() {
   });
 });
 
-test("require a module that has its own callback function", function() {
-  setup();
-  stop();
-  Malt.module('package', 'inc/a.js', function() {
-    start();
-    equals(a, 'a');
-  });
-  Malt.require('package', function() {
-  });
-});
-
 test("require a module containing one js file and another module", function() {
   setup();
 
@@ -125,5 +114,16 @@ test("require a module containing one js file and another module", function() {
     start();
     equals(a, 'a');
     equals(b, 'b');
+  });
+});
+
+test("require a module that has its own callback function", function() {
+  setup();
+  stop();
+  Malt.module('package', 'inc/a.js', function() {
+    start();
+    equals(a, 'a');
+  });
+  Malt.require('package', function() {
   });
 });
