@@ -59,7 +59,7 @@ You can declare modules/aliases for groups of resources.
 
 <pre>
 <code>
-$.module('facebox', 'js/facebox.js', 'css/facebox.css', function() {
+Malt.module('facebox', 'js/facebox.js', 'css/facebox.css', function() {
   // initialize facebox
 });
 
@@ -73,8 +73,8 @@ h3. Nested module dependencies
 
 <pre>
 <code>
-$.module('package1', 'a.js', 'b.js');
-$.module('package2', 'package1', 'c.js');
+Malt.module('package1', 'a.js', 'b.js');
+Malt.module('package2', 'package1', 'c.js');
 
 Malt.require('package2', function() {
   // executes when a.js, b.js and c.js have all been loaded
