@@ -38,10 +38,6 @@ var Malt = (function() {
   };
 
   var loadScript = function(url, onload) {
-    loadScriptXhrInjection(url, onload);
-  };
-
-  var loadScriptXhrInjection = function(url, onload) {
     var xhrObj = getXHRObject();
     xhrObj.onreadystatechange = function() {
       if (xhrObj.readyState == 4) {
