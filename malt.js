@@ -156,89 +156,90 @@ var Malt = {};
         self.children.push(resource);
       });
     }
+  };
+  
+  Resource.prototype.load = function() {
+    var self = this;
+    
+    if (self.status != null) {
+      // If this resource is 'loading' or 'loaded' -- do nothing. The loading
+      // process will handle all the work once it finishes.
+      return;
+    }
 
-    self.load = function() {
-      if (self.status == null) {
-        self.status = 'loading';
-        // This is a brand new self that we haven't done anything with yet
-      } else {
-        // Either loading or done -- do nothing. The loading process will
-        // handle all the work once it finishes.
+    // Otherwise this is a brand new resource we haven't seen yet.
+    self.status = 'loading';
+       
+    // If this is a leaf node, then we're dealing with an individual file,
+    // so just fetch the file.
+    if (!self.children) {
+      getGeneric(self.name, function() {
+        self.status = 'loaded';
+        _log.push(self.name);
+
+        // Walk up the tree and find out if any parent resources have
+        // been satisfied
+        self.updateParents();
+      });
+    } else {
+      // This resource has further children. Execute #load for each of them.
+      each(self.children, function(k, resource) {
+        resource.parents.push(self);
+        resource.load();
+      });
+    }
+  };
+    
+  // Walk up the tree, and for each parent resource, see if it has become
+  // satisfied as a result of whatever loaded resource triggered this function.
+  Resource.prototype.updateParents = function() {
+    each(this.parents, function(k, parent) {
+      if (parent.isLoaded()) {
+        
+        // Mark as loaded so we don't have to look *down* the tree again.
+        parent.status = 'loaded';
+        parent.insertQueuedScripts();
+        parent.callback && parent.callback();
+        parent.updateParents();
+      }
+    });
+  };
+
+  // Take all of the deferred scripts that belong to this
+  // dependency and inject them into the page.
+  Resource.prototype.insertQueuedScripts = function() {
+    each(this.children, function(k, resource) {
+      if (!_queuedScripts[resource.name]) {
         return;
       }
-      
-      // If this is a leaf node, then we're dealing with an individual file,
-      // so just fetch the file.
-      if (!self.children) {
-        getGeneric(self.name, function() {
-          self.status = 'loaded';
-          _log.push(self.name);
 
-          // Walk up the tree and find out if any parent resources have
-          // been satisfied
-          self.updateParents();
-        });
-      } else {
-        // This resource has further children. Execute #load for each of them.
-        each(self.children, function(k, resource) {
-          resource.parents.push(self);
-          resource.load();
-        });
-      }
-    };
+      var response = _queuedScripts[resource.name];
+      var se = document.createElement('script');
+      document.getElementsByTagName('head')[0].appendChild(se);
+      se.text = response;
+
+      // No longer queued
+      _queuedScripts[resource.name] = null;
+    });
+  };
     
-    // Walk up the tree, and for each parent resource, see if it has become
-    // satisfied as a result of whatever loaded resource triggered this function.
-    this.updateParents = function() {
-      each(self.parents, function(k, parent) {
-        if (parent.isLoaded()) {
-          
-          // Mark as loaded so we don't have to look *down* the tree again.
-          parent.status = 'loaded';
-          parent.insertQueuedScripts();
-          parent.callback && parent.callback();
-          parent.updateParents();
+  // Returns true if a resource is loaded.  
+  Resource.prototype.isLoaded = function() {
+    if (this.status == 'loaded') {
+      return true;
+    }
+    
+    if (!this.children) {
+      return this.status == 'loaded'; 
+    } else {
+      var allLoaded = true;
+      each(this.children, function(k, child) {
+        if (!child.isLoaded()) {
+          allLoaded = false;
         }
       });
-    };
-    
-    // Returns true if a resource is loaded.
-    this.isLoaded = function() {
-      if (this.status == 'loaded') {
-        return true;
-      }
-      
-      if (!this.children) {
-        return self.status == 'loaded'; 
-      } else {
-        var allLoaded = true;
-        each(this.children, function(k, child) {
-          if (!child.isLoaded()) {
-            allLoaded = false;
-          }
-        });
-        return allLoaded;
-      }
-    };
-    
-
-    // Take all of the deferred scripts that belong to this
-    // dependency and inject them into the page.
-    this.insertQueuedScripts = function() {
-      each(this.children, function(k, resource) {
-        if (!_queuedScripts[resource.name]) {
-          return;
-        }
-
-        var response = _queuedScripts[resource.name];
-        var se = document.createElement('script');
-        document.getElementsByTagName('head')[0].appendChild(se);
-        se.text = response;
-
-        // No longer queued
-        _queuedScripts[resource.name] = null;
-      });
-    };
+      return allLoaded;
+    }
   };
 
   //-----------------------------------------------------
@@ -283,5 +284,5 @@ var Malt = {};
   
   Malt.getLog = function() {
     return _log;
-  }
+  };
 })(Malt);
