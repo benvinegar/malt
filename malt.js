@@ -7,11 +7,9 @@ var Malt = (function() {
   // been evaled.
   var _deferredScripts = [];
   
-  // Keeps track of already loaded (or loading) resources
+  // Resource map. Tracks both user-named modules, and resources that
+  // are loading/loaded.
   var _resourceMap = {};
-  
-  // A map of all available modules
-  var _modules = {};
   
   // A log of resources downloaded; used for testing
   var _log = [];
@@ -118,43 +116,32 @@ var Malt = (function() {
    // Class to encapsulate a resource. A resource can be a single file (leaf node),
    // or it can be a collection of many resources.
 
-  var Resource = function(url, callback) {
+  var Resource = function(name, dependencies, callback) {
     var self = this;
-    
-    self.name = url;          // Symbolic name, if one exists
-    self.status = null;       // Loading status: null, LOADING, or FINISHED
-    self.parents = [];        // Resources that are "watching" this resource (parents)
+
+    self.name     = name;     // Symbolic name (can be null)
+    self.status   = null;     // Loading status: null, LOADING, or FINISHED
+    self.parents  = [];       // Resources that are "watching" this resource (parents)
     self.callback = callback; // Callback to execute once resource is done loading
     self.children = null;     // Child resources (if they exist)
 
-    // If we're passed an array for url, that means this resource is composed
-    // of many resources (can also be an array of just ONE resource)
-    if (typeof url === 'object') {
+    // If this is a named resource (declared module or leaf node / file), register it
+    // for later retrieval
+    if (self.name !== null) {
+      _resourceMap[self.name] = self;
+    }
+
+    if (typeof dependencies === 'object')
+    {
+      // If we're passed an array for names, that means this resource is composed
+      // of many resources (can also be an array of just ONE resource)
       self.children = [];
+      
       // For each child resource ...
-      each(url, function(k, u) {
-        var resource;
-        
-        // Check the _resourceMap to see if we're already tracking this
-        // resource (we've seen it before)
-        if (_resourceMap[u]) {
-          resource = _resourceMap[u];
-        } 
-        else {
-          // Nope - this is a new resource.
-          
-          // Second, see if there's a module defined for any of these
-          // resources.
-          if (_modules[u]) {
-            resource = _modules[u];
-          } else {
-            resource = new Resource(u);
-          }
-          
-          // Add it to the resource map. So we don't repeat ourselves later.
-          _resourceMap[u] = resource;
-        }
-        self.children.push(resource);
+      each(dependencies, function(k, dep) {
+        // Check our resourceMap to see if we're already tracking this
+        // resource name, otherwise create a new object
+        self.children.push(_resourceMap[dep] ? _resourceMap[dep] : new Resource(dep));
       });
     }
   };
@@ -262,7 +249,9 @@ var Malt = (function() {
       urls = makeArray(arguments).slice(1, -1);
     }
 
-    _modules[name] = new Resource(urls, callback);
+    // Just need to create a resource with the given name. It will
+    // register itself for later retrieval.
+    new Resource(name, urls, callback);
   };
 
   Malt.require = function() {
@@ -275,14 +264,12 @@ var Malt = (function() {
       callback = null;
     }
 
-    var resource = new Resource(urls, callback);
-    resource.load();
+    (new Resource(null, urls, callback)).load();
   };
 
   Malt.reset = function() {
     _deferredScripts = {};
     _resourceMap = {};
-    _modules = {};
     _log = [];
   };
   
