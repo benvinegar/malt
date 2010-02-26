@@ -1,5 +1,8 @@
 var Malt = (function() {
-
+  // Constants
+  var LOADING  = 1;
+  var FINISHED = 2;
+  
   // Script bodies that have been fetched via XHR, but haven't yet
   // been evaled.
   var _deferredScripts = [];
@@ -119,13 +122,13 @@ var Malt = (function() {
     var self = this;
     
     self.name = url;          // Symbolic name, if one exists
-    self.status = null;       // Loading status: null, 'loading', or 'loaded'
+    self.status = null;       // Loading status: null, LOADING, or FINISHED
     self.parents = [];        // Resources that are "watching" this resource (parents)
     self.callback = callback; // Callback to execute once resource is done loading
     self.children = null;     // Child resources (if they exist)
 
     // If we're passed an array for url, that means this resource is composed
-    // of many resources
+    // of many resources (can also be an array of just ONE resource)
     if (typeof url === 'object') {
       self.children = [];
       // For each child resource ...
@@ -159,20 +162,22 @@ var Malt = (function() {
   Resource.prototype.load = function() {
     var self = this;
     
-    if (self.status != null) {
-      // If this resource is 'loading' or 'loaded' -- do nothing. The loading
+    if (self.status !== null) {
+      // If this resource is LOADING or FINISHED -- do nothing. The loading
       // process will handle all the work once it finishes.
       return;
     }
 
     // Otherwise this is a brand new resource we haven't seen yet.
-    self.status = 'loading';
+    self.status = LOADING;
        
     // If this is a leaf node, then we're dealing with an individual file,
     // so just fetch the file.
     if (!self.children) {
       getGeneric(self.name, function() {
-        self.status = 'loaded';
+        
+        self.status = FINISHED;
+        
         _log.push(self.name);
 
         // Walk up the tree and find out if any parent resources have
@@ -194,8 +199,8 @@ var Malt = (function() {
     each(this.parents, function(k, parent) {
       if (parent.isLoaded()) {
         
-        // Mark as loaded so we don't have to traverse down the tree again.
-        parent.status = 'loaded';
+        // Mark as finished so we don't have to traverse down the tree again.
+        parent.status = FINISHED;
         parent.insertDeferredScripts();
         parent.callback && parent.callback();
         parent.updateParents();
@@ -205,12 +210,12 @@ var Malt = (function() {
   
   // Returns true if a resource is loaded.  
   Resource.prototype.isLoaded = function() {
-    if (this.status == 'loaded') {
+    if (this.status === FINISHED) {
       return true;
     }
     
     if (!this.children) {
-      return this.status == 'loaded'; 
+      return this.status === FINISHED;
     } else {
       var allLoaded = true;
       each(this.children, function(k, child) {
