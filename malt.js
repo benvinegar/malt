@@ -1,10 +1,8 @@
-var Malt = {};
-
-(function(Malt) {
+var Malt = (function() {
 
   // Script bodies that have been fetched via XHR, but haven't yet
   // been evaled.
-  var _queuedScripts = [];
+  var _deferredScripts = [];
   
   // Keeps track of already loaded (or loading) resources
   var _resourceMap = {};
@@ -46,7 +44,7 @@ var Malt = {};
     var xhrObj = getXHRObject();
     xhrObj.onreadystatechange = function() {
       if (xhrObj.readyState == 4) {
-        _queuedScripts[url] = xhrObj.responseText;
+        _deferredScripts[url] = xhrObj.responseText;
         onload();
       }
     };
@@ -178,14 +176,14 @@ var Malt = {};
         _log.push(self.name);
 
         // Walk up the tree and find out if any parent resources have
-        // been satisfied
+        // been satisfied.
         self.updateParents();
       });
     } else {
       // This resource has further children. Execute #load for each of them.
-      each(self.children, function(k, resource) {
-        resource.parents.push(self);
-        resource.load();
+      each(self.children, function(k, child) {
+        child.parents.push(self);
+        child.load();
       });
     }
   };
@@ -196,33 +194,15 @@ var Malt = {};
     each(this.parents, function(k, parent) {
       if (parent.isLoaded()) {
         
-        // Mark as loaded so we don't have to look *down* the tree again.
+        // Mark as loaded so we don't have to traverse down the tree again.
         parent.status = 'loaded';
-        parent.insertQueuedScripts();
+        parent.insertDeferredScripts();
         parent.callback && parent.callback();
         parent.updateParents();
       }
     });
   };
-
-  // Take all of the deferred scripts that belong to this
-  // dependency and inject them into the page.
-  Resource.prototype.insertQueuedScripts = function() {
-    each(this.children, function(k, resource) {
-      if (!_queuedScripts[resource.name]) {
-        return;
-      }
-
-      var response = _queuedScripts[resource.name];
-      var se = document.createElement('script');
-      document.getElementsByTagName('head')[0].appendChild(se);
-      se.text = response;
-
-      // No longer queued
-      _queuedScripts[resource.name] = null;
-    });
-  };
-    
+  
   // Returns true if a resource is loaded.  
   Resource.prototype.isLoaded = function() {
     if (this.status == 'loaded') {
@@ -242,10 +222,29 @@ var Malt = {};
     }
   };
 
+  // Take all of the deferred scripts that belong to this
+  // dependency and inject them into the page.
+  Resource.prototype.insertDeferredScripts = function() {
+    each(this.children, function(k, resource) {
+      if (!_deferredScripts[resource.name]) {
+        return;
+      }
+
+      var response = _deferredScripts[resource.name];
+      var se = document.createElement('script');
+      document.getElementsByTagName('head')[0].appendChild(se);
+      se.text = response;
+
+      // No longer queued
+      _deferredScripts[resource.name] = null;
+    });
+  };
+
   //-----------------------------------------------------
   // Public Methods
   //=====================================================
-
+  var Malt = {};
+  
   Malt.module = function() {
     var name      = arguments[0];
     var urls      = [];
@@ -276,7 +275,7 @@ var Malt = {};
   };
 
   Malt.reset = function() {
-    _queuedScripts = {};
+    _deferredScripts = {};
     _resourceMap = {};
     _modules = {};
     _log = [];
@@ -285,4 +284,6 @@ var Malt = {};
   Malt.getLog = function() {
     return _log;
   };
-})(Malt);
+  
+  return Malt;
+})();
